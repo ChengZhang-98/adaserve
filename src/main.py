@@ -6,6 +6,7 @@ from chop.distributed.launcher import MaseLauncher
 
 from models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 from models.gpt2.configuration_gpt2 import GPT2Config
+from models.mixtral.modeling_mixtral import MixtralForCausalLM, MixtralConfig
 
 from manual import manual_sharding_runner
 from auto import autosharding_runner
@@ -17,10 +18,12 @@ logger.setLevel("INFO")
 
 CONFIG_MAP = {
     "gpt2": GPT2Config,
+    "mixtral": MixtralConfig,
 }
 
 MODEL_MAP = {
     "gpt2": GPT2LMHeadModel,
+    "mixtral": MixtralForCausalLM,
 }
 
 
@@ -79,9 +82,7 @@ def parse_args():
     )
 
     # Manual sharding args
-    parser.add_argument(
-        "--row", action="store_true", help="Use row sharding (manual) for testing."
-    )
+    parser.add_argument("--row", action="store_true", help="Use row sharding (manual) for testing.")
     parser.add_argument(
         "--column",
         action="store_true",
@@ -110,7 +111,7 @@ def parse_args():
     # Define model
     parser.add_argument(
         "--model",
-        choices=["gpt2"],
+        choices=list(MODEL_MAP.keys()),
         default="gpt2",
         help="Specify the model to use (gpt2)",
     )
@@ -134,9 +135,7 @@ def parse_args():
     )
 
     # OPT
-    parser.add_argument(
-        "--ffn_dim", type=int, default=None, help="Number of hidden layers"
-    )
+    parser.add_argument("--ffn_dim", type=int, default=None, help="Number of hidden layers")
     parser.add_argument(
         "--hidden_size",
         type=int,
@@ -169,9 +168,7 @@ def parse_args():
     )
 
     # Bert
-    parser.add_argument(
-        "--intermediate_size", type=int, default=None, help="Intermediate size"
-    )
+    parser.add_argument("--intermediate_size", type=int, default=None, help="Intermediate size")
 
     # Other configuration
     parser.add_argument(
@@ -285,9 +282,7 @@ def main():
         logger.info(f"Running autosharding for model: {args.model}")
 
         if args.pre_mp_autosharding:
-            mg, pass_outputs = autosharding_runner(
-                model_class=model_class, model_config=config, args=args
-            )
+            mg, pass_outputs = autosharding_runner(model_class=model_class, model_config=config, args=args)
             return
 
         if not args.skip_forward:
